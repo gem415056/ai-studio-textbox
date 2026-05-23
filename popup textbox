@@ -1,0 +1,261 @@
+// ==UserScript==
+// @name         Google AI Studio 모바일 팝업 입력창
+// @namespace    https://aistudio.google.com/
+// @version      1.0.0
+// @description  모바일 환경을 위한 20줄 확장 지원 팝업 입력창
+// @author       User
+// @match        https://aistudio.google.com/*
+// @grant        none
+// ==/UserScript==
+
+(function () {
+    'use strict';
+
+    // ==========================================
+    // 1. CSS 스타일 정의 (모바일 최적화 및 다크 모드 대응)
+    // ==========================================
+    const style = document.createElement('style');
+    style.textContent = `
+        /* 팝업을 여는 버튼 스타일 (둥근 정사각형) */
+        .custom-popup-trigger-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px; /* 둥근 정사각형 테두리 */
+            border: 1px solid rgba(128, 128, 128, 0.3);
+            background: transparent;
+            cursor: pointer;
+            margin-right: 8px;
+            transition: background 0.2s;
+        }
+        .custom-popup-trigger-btn:active {
+            background: rgba(128, 128, 128, 0.2);
+        }
+
+        /* 팝업 배경 (어둡게 처리) */
+        #custom-aistudio-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 999999;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(2px);
+        }
+
+        /* 팝업창 본체 */
+        .custom-modal-content {
+            background: #1e1e1e;
+            width: 92%;
+            max-width: 600px;
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            font-family: 'Pretendard', -apple-system, sans-serif;
+        }
+
+        /* 상단 버튼 영역 (우측 정렬) */
+        .custom-modal-header {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        /* 팝업 내 버튼들 기본 스타일 */
+        .custom-modal-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            height: 32px;
+            padding: 0 12px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: transparent;
+            color: #fff;
+        }
+
+        /* 전체복사 버튼 */
+        .btn-copy { color: #ccc; }
+        /* 취소 버튼 */
+        .btn-cancel { color: #ff8a8a; border-color: rgba(255, 138, 138, 0.3); }
+        /* 입력 버튼 (눈에 띄게) */
+        .btn-submit { background: #d5c2de; color: #000; border: none; }
+
+        /* 텍스트 입력창 */
+        #custom-modal-textarea {
+            width: 100%;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 16px; /* 모바일 자동 확대 방지 */
+            line-height: 1.5;
+            padding: 12px;
+            outline: none;
+            resize: none;
+            box-sizing: border-box;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        #custom-modal-textarea::placeholder {
+            color: #888;
+        }
+    `;
+    document.head.appendChild(style);
+
+    // ==========================================
+    // 2. 팝업 UI 생성 및 DOM 삽입
+    // ==========================================
+    const modal = document.createElement('div');
+    modal.id = 'custom-aistudio-modal';
+    
+    modal.innerHTML = `
+        <div class="custom-modal-content">
+            <div class="custom-modal-header">
+                <button class="custom-modal-btn btn-copy" id="custom-btn-copy">전체복사</button>
+                <button class="custom-modal-btn btn-cancel" id="custom-btn-cancel">취소</button>
+                <button class="custom-modal-btn btn-submit" id="custom-btn-submit">입력</button>
+            </div>
+            <textarea id="custom-modal-textarea" placeholder="여기에 대사를 길게 입력하세요..."></textarea>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    const textarea = document.getElementById('custom-modal-textarea');
+    const btnCopy = document.getElementById('custom-btn-copy');
+    const btnCancel = document.getElementById('custom-btn-cancel');
+    const btnSubmit = document.getElementById('custom-btn-submit');
+
+    // ==========================================
+    // 3. 기능 로직 구현
+    // ==========================================
+
+    // 입력창 20줄 제한 및 스크롤 로직
+    const adjustHeight = () => {
+        textarea.style.height = 'auto';
+        const computed = window.getComputedStyle(textarea);
+        const padding = parseInt(computed.paddingTop) + parseInt(computed.paddingBottom);
+        const lineHeight = parseInt(computed.lineHeight) || 24;
+        
+        // 최대 20줄까지만 커지도록 설정
+        const maxHeight = (lineHeight * 20) + padding;
+
+        if (textarea.scrollHeight > maxHeight) {
+            textarea.style.height = maxHeight + 'px';
+            textarea.style.overflowY = 'auto';
+        } else {
+            textarea.style.height = textarea.scrollHeight + 'px';
+            textarea.style.overflowY = 'hidden';
+        }
+    };
+    textarea.addEventListener('input', adjustHeight);
+
+    // 전체복사 기능
+    btnCopy.onclick = () => {
+        if (!textarea.value) return;
+        navigator.clipboard.writeText(textarea.value).then(() => {
+            const originalText = btnCopy.textContent;
+            btnCopy.textContent = "복사됨!";
+            btnCopy.style.color = "#3ddc84";
+            setTimeout(() => {
+                btnCopy.textContent = originalText;
+                btnCopy.style.color = "#ccc";
+            }, 1500);
+        });
+    };
+
+    // 취소 기능 (닫기)
+    const closeModal = () => {
+        modal.style.display = 'none';
+        textarea.value = '';
+    };
+    btnCancel.onclick = closeModal;
+
+    // 모달 바깥 터치 시 닫기
+    modal.onclick = (e) => {
+        if (e.target === modal) closeModal();
+    };
+
+    // 입력 기능 (AI Studio 원본 입력창으로 텍스트 전달)
+    btnSubmit.onclick = () => {
+        // AI Studio의 오리지널 텍스트 에어리어 찾기
+        const originalInput = document.querySelector('textarea[formcontrolname="promptText"], textarea[aria-label="Enter a prompt"]');
+        
+        if (originalInput && textarea.value.trim() !== '') {
+            // 기존 내용이 있다면 줄바꿈 후 추가, 없다면 그냥 넣기
+            const currentValue = originalInput.value;
+            const newValue = currentValue ? currentValue + '\n' + textarea.value : textarea.value;
+            
+            // Angular 프레임워크가 변화를 감지할 수 있도록 값 세팅
+            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set;
+            nativeInputValueSetter.call(originalInput, newValue);
+            
+            // 이벤트 강제 발생시켜 AI Studio에 인식시킴
+            originalInput.dispatchEvent(new Event('input', { bubbles: true }));
+            originalInput.dispatchEvent(new Event('change', { bubbles: true }));
+            
+            closeModal();
+        } else {
+            alert("입력할 텍스트를 찾을 수 없습니다.");
+        }
+    };
+
+    // ==========================================
+    // 4. 원래 페이지에 팝업 호출 버튼 추가하기
+    // ==========================================
+    
+    // 요청하신 SVG 아이콘
+    const targetSVG = `<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20" width="24px" height="24px"><path d="m13.8 2.58 1.1 3.4 3.4 1.09c.23.07.23.38 0 .46l-3.4 1.09-1.1 3.4a.24.24 0 0 1-.45 0l-1.1-3.4-3.4-1.1a.24.24 0 0 1 0-.45l3.4-1.1 1.1-3.4a.24.24 0 0 1 .46 0M7.5 5.25h-5V3.92h5zm0 5.42h-5V9.33h5zm-5 5.41h15v-1.33h-15z"></path></svg>`;
+
+    function injectTriggerButton() {
+        // 이미 추가되었는지 확인
+        if (document.getElementById('custom-popup-trigger')) return;
+
+        // tool 메뉴 위치 찾기
+        const toolsContainer = document.querySelector('ms-prompt-box-tools');
+        if (!toolsContainer) return;
+
+        // 버튼 생성
+        const triggerBtn = document.createElement('button');
+        triggerBtn.id = 'custom-popup-trigger';
+        triggerBtn.className = 'custom-popup-trigger-btn';
+        triggerBtn.innerHTML = targetSVG;
+        
+        // 테마 색상 동기화 (AI Studio의 글자색 사용)
+        triggerBtn.style.color = "var(--icon_primary, #e3e3e3)";
+
+        // 버튼 클릭 시 팝업 열기
+        triggerBtn.onclick = (e) => {
+            e.preventDefault();
+            modal.style.display = 'flex';
+            
+            // 팝업 열 때 현재 AI Studio 입력창에 있던 내용을 팝업으로 가져오기(선택 사항이나 편리함을 위해 추가)
+            const originalInput = document.querySelector('textarea[formcontrolname="promptText"]');
+            if(originalInput && originalInput.value) {
+                 textarea.value = originalInput.value;
+            } else {
+                 textarea.value = '';
+            }
+            
+            adjustHeight(); // 높이 초기 셋팅
+            setTimeout(() => textarea.focus(), 50); // 커서 포커스
+        };
+
+        // tool 메뉴 '앞'에 삽입하여 API 설정 아이콘들과 자연스럽게 어울리게 배치
+        toolsContainer.parentNode.insertBefore(triggerBtn, toolsContainer);
+    }
+
+    // AI Studio는 페이지 이동 없이 UI가 동적으로 바뀌므로 주기적으로 체크하여 버튼 삽입
+    setInterval(injectTriggerButton, 1000);
+
+})();
