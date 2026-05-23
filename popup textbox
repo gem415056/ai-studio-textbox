@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Google AI Studio 모바일 팝업 입력창 (플로팅 강제유지 버전)
+// @name         Google AI Studio 모바일 팝업 입력창 (구글보안 우회버전)
 // @namespace    https://aistudio.google.com/
-// @version      4.1.0
-// @description  SPA 초기화 시 삭제되는 현상 방지, 기존 팝업 위치 재현, 좌우 20px 확장
+// @version      5.0.0
+// @description  구글 Trusted Types 보안 우회, 플로팅 버튼, 오리지널 위치 덮어쓰기
 // @author       User
 // @match        https://aistudio.google.com/*
 // @grant        none
@@ -13,7 +13,7 @@
     'use strict';
 
     // ==========================================
-    // 1. CSS 스타일 정의
+    // 1. CSS 스타일 정의 (보안 우회)
     // ==========================================
     const style = document.createElement('style');
     style.textContent = `
@@ -30,7 +30,7 @@
             backdrop-filter: blur(4px);
             color: #e3e3e3;
             cursor: grab;
-            z-index: 999998 !important; /* 무조건 최상단 노출 */
+            z-index: 999998 !important;
             box-shadow: 0 4px 12px rgba(0,0,0,0.5);
             touch-action: none;
             transition: transform 0.1s;
@@ -52,7 +52,7 @@
             box-shadow: 0 4px 25px rgba(0,0,0,0.6);
             border: 1px solid rgba(255,255,255,0.15);
             font-family: 'Pretendard', -apple-system, sans-serif;
-            z-index: 999999 !important; /* 모달은 버튼보다 위로 */
+            z-index: 999999 !important;
         }
 
         .custom-modal-header {
@@ -97,12 +97,59 @@
     document.head.appendChild(style);
 
     // ==========================================
-    // 2. UI 객체 생성
+    // 2. 요소 직접 생성 (innerHTML 사용 금지 = 구글 보안통과)
     // ==========================================
+    
+    // (1) 플로팅 버튼 조립
     const floatingBtn = document.createElement('div');
     floatingBtn.id = 'custom-floating-btn';
-    floatingBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20" width="24px" height="24px"><path d="m13.8 2.58 1.1 3.4 3.4 1.09c.23.07.23.38 0 .46l-3.4 1.09-1.1 3.4a.24.24 0 0 1-.45 0l-1.1-3.4-3.4-1.1a.24.24 0 0 1 0-.45l3.4-1.1 1.1-3.4a.24.24 0 0 1 .46 0M7.5 5.25h-5V3.92h5zm0 5.42h-5V9.33h5zm-5 5.41h15v-1.33h-15z"></path></svg>`;
 
+    const svgns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(svgns, "svg");
+    svg.setAttribute("fill", "currentColor");
+    svg.setAttribute("viewBox", "0 0 20 20");
+    svg.setAttribute("width", "24px");
+    svg.setAttribute("height", "24px");
+    
+    const path = document.createElementNS(svgns, "path");
+    path.setAttribute("d", "m13.8 2.58 1.1 3.4 3.4 1.09c.23.07.23.38 0 .46l-3.4 1.09-1.1 3.4a.24.24 0 0 1-.45 0l-1.1-3.4-3.4-1.1a.24.24 0 0 1 0-.45l3.4-1.1 1.1-3.4a.24.24 0 0 1 .46 0M7.5 5.25h-5V3.92h5zm0 5.42h-5V9.33h5zm-5 5.41h15v-1.33h-15z");
+    
+    svg.appendChild(path);
+    floatingBtn.appendChild(svg);
+
+    // (2) 모달창 조립
+    const modal = document.createElement('div');
+    modal.id = 'custom-aistudio-modal';
+
+    const header = document.createElement('div');
+    header.className = 'custom-modal-header';
+
+    const btnCopy = document.createElement('button');
+    btnCopy.className = 'custom-modal-btn btn-copy';
+    btnCopy.textContent = '전체복사';
+
+    const btnCancel = document.createElement('button');
+    btnCancel.className = 'custom-modal-btn btn-cancel';
+    btnCancel.textContent = '취소';
+
+    const btnSubmit = document.createElement('button');
+    btnSubmit.className = 'custom-modal-btn btn-submit';
+    btnSubmit.textContent = '입력';
+
+    header.appendChild(btnCopy);
+    header.appendChild(btnCancel);
+    header.appendChild(btnSubmit);
+
+    const textarea = document.createElement('textarea');
+    textarea.id = 'custom-modal-textarea';
+    textarea.placeholder = '여기에 대사를 길게 입력하세요...';
+
+    modal.appendChild(header);
+    modal.appendChild(textarea);
+
+    // ==========================================
+    // 3. 버튼 위치 복원 및 유지 관리
+    // ==========================================
     const savedPos = localStorage.getItem('aistudio_btn_pos');
     if (savedPos) {
         const pos = JSON.parse(savedPos);
@@ -113,32 +160,15 @@
         floatingBtn.style.bottom = '100px';
     }
 
-    const modal = document.createElement('div');
-    modal.id = 'custom-aistudio-modal';
-    modal.innerHTML = `
-        <div class="custom-modal-header">
-            <button class="custom-modal-btn btn-copy" id="custom-btn-copy">전체복사</button>
-            <button class="custom-modal-btn btn-cancel" id="custom-btn-cancel">취소</button>
-            <button class="custom-modal-btn btn-submit" id="custom-btn-submit">입력</button>
-        </div>
-        <textarea id="custom-modal-textarea" placeholder="여기에 대사를 길게 입력하세요..."></textarea>
-    `;
-
-    // ==========================================
-    // 3. 요소 강제 유지 (가장 중요)
-    // ==========================================
-    // 구글 페이지 로딩 후 DOM을 싹 엎어버리는 것을 대비해 주기적으로 화면을 검사하여 버튼을 다시 붙여넣습니다.
+    // 1초마다 버튼이 화면에 있는지 확인하고 없으면 다시 띄움
     function ensureUIExists() {
-        if (!document.getElementById('custom-floating-btn')) {
+        if (!document.body.contains(floatingBtn)) {
             document.body.appendChild(floatingBtn);
         }
-        if (!document.getElementById('custom-aistudio-modal')) {
+        if (!document.body.contains(modal)) {
             document.body.appendChild(modal);
-            // 모달이 DOM에 추가된 후 이벤트 리스너를 다시 연결해야 오류가 없습니다.
-            attachModalEvents();
         }
     }
-    // 1초마다 검사해서 없으면 살려냅니다.
     setInterval(ensureUIExists, 1000);
     ensureUIExists();
 
@@ -207,83 +237,56 @@
     // ==========================================
     // 5. 위치 계산 및 팝업/입력 제어 로직
     // ==========================================
-    function attachModalEvents() {
-        const textarea = document.getElementById('custom-modal-textarea');
-        const btnCopy = document.getElementById('custom-btn-copy');
-        const btnCancel = document.getElementById('custom-btn-cancel');
-        const btnSubmit = document.getElementById('custom-btn-submit');
+    const adjustHeight = () => {
+        textarea.style.height = 'auto';
+        const computed = window.getComputedStyle(textarea);
+        const padding = parseInt(computed.paddingTop) + parseInt(computed.paddingBottom);
+        const lineHeight = 24; 
+        const maxHeight = (lineHeight * 20) + padding; 
 
-        if (!textarea || !btnCopy) return;
+        if (textarea.scrollHeight > maxHeight) {
+            textarea.style.height = maxHeight + 'px';
+            textarea.style.overflowY = 'auto';
+        } else {
+            textarea.style.height = textarea.scrollHeight + 'px';
+            textarea.style.overflowY = 'hidden';
+        }
+        positionModal(); 
+    };
+    textarea.addEventListener('input', adjustHeight);
 
-        // 높이 조절
-        const adjustHeight = () => {
-            textarea.style.height = 'auto';
-            const computed = window.getComputedStyle(textarea);
-            const padding = parseInt(computed.paddingTop) + parseInt(computed.paddingBottom);
-            const lineHeight = 24; 
-            const maxHeight = (lineHeight * 20) + padding; 
+    // 복사
+    btnCopy.onclick = () => {
+        if (!textarea.value) return;
+        navigator.clipboard.writeText(textarea.value).then(() => {
+            const originalText = btnCopy.textContent;
+            btnCopy.textContent = "복사완료";
+            setTimeout(() => btnCopy.textContent = originalText, 1500);
+        });
+    };
 
-            if (textarea.scrollHeight > maxHeight) {
-                textarea.style.height = maxHeight + 'px';
-                textarea.style.overflowY = 'auto';
-            } else {
-                textarea.style.height = textarea.scrollHeight + 'px';
-                textarea.style.overflowY = 'hidden';
-            }
-            positionModal(); 
-        };
-        textarea.removeEventListener('input', adjustHeight);
-        textarea.addEventListener('input', adjustHeight);
+    // 취소
+    btnCancel.onclick = () => {
+        modal.style.display = 'none';
+        textarea.value = '';
+    };
 
-        // 복사
-        btnCopy.onclick = () => {
-            if (!textarea.value) return;
-            navigator.clipboard.writeText(textarea.value).then(() => {
-                const originalText = btnCopy.textContent;
-                btnCopy.textContent = "복사완료";
-                setTimeout(() => btnCopy.textContent = originalText, 1500);
-            });
-        };
-
-        // 취소
-        btnCancel.onclick = () => {
+    // 입력
+    btnSubmit.onclick = () => {
+        const originalInput = document.querySelector('textarea[formcontrolname="promptText"], textarea[aria-label="Enter a prompt"]');
+        if (originalInput && textarea.value.trim() !== '') {
+            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set;
+            nativeInputValueSetter.call(originalInput, textarea.value);
+            
+            originalInput.dispatchEvent(new Event('input', { bubbles: true }));
+            originalInput.dispatchEvent(new Event('change', { bubbles: true }));
+            
             modal.style.display = 'none';
             textarea.value = '';
-        };
-
-        // 입력
-        btnSubmit.onclick = () => {
-            const originalInput = document.querySelector('textarea[formcontrolname="promptText"], textarea[aria-label="Enter a prompt"]');
-            if (originalInput && textarea.value.trim() !== '') {
-                const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set;
-                nativeInputValueSetter.call(originalInput, textarea.value);
-                
-                originalInput.dispatchEvent(new Event('input', { bubbles: true }));
-                originalInput.dispatchEvent(new Event('change', { bubbles: true }));
-                
-                modal.style.display = 'none';
-                textarea.value = '';
-            } else {
-                alert("AI Studio의 입력창을 찾을 수 없습니다.");
-            }
-        };
-
-        window.openModalFromGlobal = function() {
-            modal.style.display = 'flex';
-            const originalInput = document.querySelector('textarea[formcontrolname="promptText"], textarea[aria-label="Enter a prompt"]');
-            if(originalInput && originalInput.value) {
-                textarea.value = originalInput.value;
-            } else {
-                textarea.value = '';
-            }
-            positionModal();
-            adjustHeight();
-            setTimeout(() => {
-                textarea.focus();
-                textarea.setSelectionRange(textarea.value.length, textarea.value.length);
-            }, 50);
-        };
-    }
+        } else {
+            alert("AI Studio의 입력창을 찾을 수 없습니다.");
+        }
+    };
 
     function positionModal() {
         const originalInput = document.querySelector('textarea[formcontrolname="promptText"], textarea[aria-label="Enter a prompt"]');
@@ -291,14 +294,25 @@
 
         const rect = originalInput.getBoundingClientRect();
         
-        // 원본 입력창의 '밑바닥' 기준 위치 계산 + 양옆 20px씩 확장
         modal.style.left = (rect.left - 20) + 'px';
         modal.style.width = (rect.width + 40) + 'px';
         modal.style.bottom = (window.innerHeight - rect.bottom) + 'px';
     }
 
     function openModal() {
-        if (window.openModalFromGlobal) window.openModalFromGlobal();
+        modal.style.display = 'flex';
+        const originalInput = document.querySelector('textarea[formcontrolname="promptText"], textarea[aria-label="Enter a prompt"]');
+        if(originalInput && originalInput.value) {
+            textarea.value = originalInput.value;
+        } else {
+            textarea.value = '';
+        }
+        positionModal();
+        adjustHeight();
+        setTimeout(() => {
+            textarea.focus();
+            textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+        }, 50);
     }
 
     if (window.visualViewport) {
