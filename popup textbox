@@ -311,7 +311,7 @@
         const computed = window.getComputedStyle(textarea);
         const padding = parseInt(computed.paddingTop) + parseInt(computed.paddingBottom);
         const lineHeight = 24; 
-        const maxHeight = (lineHeight * 20) + padding; 
+        const maxHeight = (lineHeight * 10) + padding; 
 
         if (textarea.scrollHeight > maxHeight) {
             textarea.style.height = maxHeight + 'px';
