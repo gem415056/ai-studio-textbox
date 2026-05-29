@@ -131,7 +131,7 @@
         .btn-submit { 
             background: var(--custom-submit-bg) !important; 
             color: var(--custom-submit-text); 
-            border: none; 
+            border: 1px solid var(--custom-btn-border); 
         }
 
         /* 텍스트 입력창 */
