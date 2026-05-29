@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Google AI Studio 모바일 팝업 입력창 (v7.1.0)
+// @name         Google AI Studio 모바일 팝업 입력창 (v7.1.1)
 // @namespace    https://aistudio.google.com/
-// @version      7.1.0
+// @version      7.1.1
 // @description  라이트/다크 자동감지, 구글 보안 우회, 플로팅 버튼, 프롬프트 문구 적용
 // @author       User
 // @match        https://aistudio.google.com/*
