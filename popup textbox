@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Google AI Studio 모바일 팝업 입력창 (최종 완결판)
+// @name         Google AI Studio 모바일 팝업 입력창 (v7.1.0)
 // @namespace    https://aistudio.google.com/
-// @version      7.0.0
+// @version      7.1.0
 // @description  라이트/다크 자동감지, 구글 보안 우회, 플로팅 버튼, 프롬프트 문구 적용
 // @author       User
 // @match        https://aistudio.google.com/*
@@ -28,7 +28,7 @@
             --custom-copy-text: #cccccc;
             --custom-cancel-text: #ff8a8a;
             --custom-cancel-border: rgba(255, 138, 138, 0.3);
-            --custom-submit-bg: #666666;
+            --custom-submit-bg: #999999;
             --custom-submit-text: #ffffff;
             --custom-shadow: rgba(0, 0, 0, 0.6);
         }
@@ -44,7 +44,7 @@
             --custom-copy-text: #555555;
             --custom-cancel-text: #e53935;
             --custom-cancel-border: rgba(229, 57, 53, 0.3);
-            --custom-submit-bg: #e0e0e0;
+            --custom-submit-bg: #eeeeee;
             --custom-submit-text: #111111;
             --custom-shadow: rgba(0, 0, 0, 0.2);
         }
@@ -113,13 +113,18 @@
         }
 
         /* 전체복사 버튼 */
-        .btn-copy { background: transparent; color: var(--custom-copy-text); }
+        .btn-copy { 
+            background: transparent; 
+            color: var(--custom-copy-text); 
+            width: 30px; 
+            padding: 0; 
+        }
         
         /* 취소 버튼 */
         .btn-cancel { 
             background: transparent !important; 
-            color: var(--custom-cancel-text); 
-            border: 1px solid var(--custom-cancel-border); 
+            color: var(--custom-copy-text); 
+            border: 1px solid var(--custom-btn-border); 
         }
         
         /* 입력 버튼 */
@@ -177,7 +182,7 @@
 
     const btnCopy = document.createElement('button');
     btnCopy.className = 'custom-modal-btn btn-copy';
-    btnCopy.textContent = '전체복사';
+    btnCopy.textContent = '⌘';
 
     const btnCancel = document.createElement('button');
     btnCancel.className = 'custom-modal-btn btn-cancel';
