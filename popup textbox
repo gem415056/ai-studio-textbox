@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Google AI Studio 모바일 팝업 입력창 (v7.3.2)
+// @name         Google AI Studio 모바일 팝업 입력창 (v7.3.4)
 // @namespace    https://aistudio.google.com/
-// @version      7.3.2
+// @version      7.3.4
 // @description  라이트/다크 자동감지, 구글 보안 우회, 플로팅 버튼, 프롬프트 문구 적용
 // @author       User
 // @match        https://aistudio.google.com/*
@@ -166,10 +166,35 @@
     const header = document.createElement('div');
     header.className = 'custom-modal-header';
 
-    // 복사 버튼 생성 및 전달받은 SVG 삽입
+    // 복사 버튼 생성 및 전달받은 SVG 객체 조립 (구글 보안 우회를 위해 안전한 DOM 방식으로 생성)
     const btnCopy = document.createElement('button');
     btnCopy.className = 'custom-modal-btn btn-copy';
-    btnCopy.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy-icon lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`;
+
+    const copySvg = document.createElementNS(svgns, "svg");
+    copySvg.setAttribute("width", "24");
+    copySvg.setAttribute("height", "24");
+    copySvg.setAttribute("viewBox", "0 0 24 24");
+    copySvg.setAttribute("fill", "none");
+    copySvg.setAttribute("stroke", "currentColor");
+    copySvg.setAttribute("stroke-width", "2");
+    copySvg.setAttribute("stroke-linecap", "round");
+    copySvg.setAttribute("stroke-linejoin", "round");
+    copySvg.setAttribute("class", "lucide lucide-copy-icon lucide-copy");
+
+    const rect = document.createElementNS(svgns, "rect");
+    rect.setAttribute("width", "14");
+    rect.setAttribute("height", "14");
+    rect.setAttribute("x", "8");
+    rect.setAttribute("y", "8");
+    rect.setAttribute("rx", "2");
+    rect.setAttribute("ry", "2");
+
+    const pathEl = document.createElementNS(svgns, "path");
+    pathEl.setAttribute("d", "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2");
+
+    copySvg.appendChild(rect);
+    copySvg.appendChild(pathEl);
+    btnCopy.appendChild(copySvg);
 
     header.appendChild(btnCopy);
 
@@ -182,7 +207,7 @@
     modal.appendChild(textarea);
 
     // ==========================================
-    // 3. 유지 관리 및 테마 감지 (오리지널 복원)
+    // 3. 유지 관리 및 테마 감지 (오리지널과 동일 구조 유지)
     // ==========================================
     const savedPos = localStorage.getItem('aistudio_btn_pos');
     if (savedPos) {
@@ -224,7 +249,7 @@
     ensureUIExists();
 
     // ==========================================
-    // 4. 드래그 로직 (오리지널 복원)
+    // 4. 드래그 로직 (오리지널과 동일 구조 유지)
     // ==========================================
     let isDragging = false;
     let hasMoved = false;
@@ -306,13 +331,26 @@
     };
     textarea.addEventListener('input', adjustHeight);
 
-    // 전체 복사 동작
+    // 전체 복사 동작 (보안 검회를 통과하기 위해 innerHTML 미사용 우회 구현)
     btnCopy.onclick = () => {
         if (!textarea.value) return;
         navigator.clipboard.writeText(textarea.value).then(() => {
-            const originalSVG = btnCopy.innerHTML;
-            btnCopy.innerHTML = `<span style="font-size: 11px; font-weight: bold; color: var(--custom-border);">복사됨</span>`;
-            setTimeout(() => btnCopy.innerHTML = originalSVG, 1500);
+            if (btnCopy.contains(copySvg)) {
+                btnCopy.removeChild(copySvg);
+            }
+            const copyText = document.createElement('span');
+            copyText.style.fontSize = '11px';
+            copyText.style.fontWeight = 'bold';
+            copyText.style.color = 'var(--custom-border)';
+            copyText.textContent = '복사됨';
+            btnCopy.appendChild(copyText);
+
+            setTimeout(() => {
+                if (btnCopy.contains(copyText)) {
+                    btnCopy.removeChild(copyText);
+                }
+                btnCopy.appendChild(copySvg);
+            }, 1500);
         });
     };
 
