@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Google AI Studio 모바일 팝업 입력창 (v7.1.1)
+// @name         Google AI Studio 모바일 팝업 입력창 (v7.3.0)
 // @namespace    https://aistudio.google.com/
-// @version      7.2.0
-// @description  라이트/다크 자동감지, 구글 보안 우회, 플로팅 버튼, 프롬프트 문구 적용
+// @version      7.3.0
+// @description  라이트/다크 자동감지, 구글 보안 우회, 플로팅 버튼, 프롬프트 문구 적용, 원터치 자동동기화
 // @author       User
 // @match        https://aistudio.google.com/*
 // @grant        none
@@ -90,14 +90,14 @@
             transition: background 0.3s;
         }
 
-        /* 상단 버튼 영역 */
+        /* 상단 버튼 영역 (좌측 정렬 적용) */
         .custom-modal-header {
             display: flex;
             justify-content: flex-start;
             gap: 8px;
         }
 
-        /* 개별 버튼 기본 스타일 */
+        /* 개별 버튼 기본 스타일 (테두리 제거) */
         .custom-modal-btn {
             display: inline-flex;
             align-items: center;
@@ -113,7 +113,7 @@
             transition: all 0.2s;
         }
 
-        /* 전체복사 버튼 */
+        /* 전체복사 버튼 (SVG 테두리 색상 맞춤) */
         .btn-copy { 
             background: transparent; 
             color: var(--custom-border); 
@@ -166,13 +166,14 @@
     const header = document.createElement('div');
     header.className = 'custom-modal-header';
 
+    // 복사 버튼에 신규 SVG 삽입
     const btnCopy = document.createElement('button');
     btnCopy.className = 'custom-modal-btn btn-copy';
     btnCopy.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy-icon lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`;
 
     header.appendChild(btnCopy);
 
-    // 프롬프트 안내 문구 수정 완료
+    // 텍스트 에리어 생성
     const textarea = document.createElement('textarea');
     textarea.id = 'custom-modal-textarea';
     textarea.placeholder = '여기에 프롬프트를 입력하세요...';
@@ -305,6 +306,7 @@
     };
     textarea.addEventListener('input', adjustHeight);
 
+    // 전체 복사 처리
     btnCopy.onclick = () => {
         if (!textarea.value) return;
         navigator.clipboard.writeText(textarea.value).then(() => {
@@ -314,6 +316,7 @@
         });
     };
 
+    // 내용을 AI Studio 본래 입력창으로 동기화 및 닫기
     function submitAndClose() {
         const originalInput = document.querySelector('textarea[formcontrolname="promptText"], textarea[aria-label="Enter a prompt"]');
         if (originalInput) {
@@ -326,6 +329,7 @@
         modal.style.display = 'none';
     }
 
+    // 팝업창이 .prompt-box-container 영역을 정확히 덮도록 정렬
     function positionModal() {
         const container = document.querySelector('.prompt-box-container');
         if (!container || modal.style.display === 'none') return;
@@ -360,6 +364,7 @@
     }
     window.addEventListener('scroll', positionModal, true);
 
+    // 텍스트 영역 외의 바깥을 클릭/터치 시 저장 후 닫기
     document.addEventListener('pointerdown', (e) => {
         if (modal.style.display === 'flex') {
             if (e.target !== textarea && !btnCopy.contains(e.target)) {
