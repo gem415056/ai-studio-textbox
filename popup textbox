@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Google AI Studio 모바일 팝업 입력창 (v7.3.0)
+// @name         Google AI Studio 모바일 팝업 입력창 (v7.3.1)
 // @namespace    https://aistudio.google.com/
-// @version      7.3.0
-// @description  라이트/다크 자동감지, 구글 보안 우회, 플로팅 버튼, 프롬프트 문구 적용, 원터치 자동동기화
+// @version      7.3.1
+// @description  라이트/다크 자동감지, 구글 보안 우회, 플로팅 버튼, 프롬프트 문구 적용, 원터치 자동동기화 (안전성 강화)
 // @author       User
 // @match        https://aistudio.google.com/*
 // @grant        none
@@ -184,11 +184,22 @@
     // ==========================================
     // 3. 유지 관리 및 테마 감지
     // ==========================================
-    const savedPos = localStorage.getItem('aistudio_btn_pos');
+    let savedPos = null;
+    try {
+        savedPos = localStorage.getItem('aistudio_btn_pos');
+    } catch (e) {
+        console.warn("Storage access denied:", e);
+    }
+
     if (savedPos) {
-        const pos = JSON.parse(savedPos);
-        floatingBtn.style.left = pos.left;
-        floatingBtn.style.top = pos.top;
+        try {
+            const pos = JSON.parse(savedPos);
+            floatingBtn.style.left = pos.left;
+            floatingBtn.style.top = pos.top;
+        } catch (e) {
+            floatingBtn.style.right = '20px';
+            floatingBtn.style.bottom = '100px';
+        }
     } else {
         floatingBtn.style.right = '20px';
         floatingBtn.style.bottom = '100px';
@@ -196,6 +207,7 @@
 
     // 라이트 모드 판단 함수
     function detectTheme() {
+        if (!document.body) return;
         const color = window.getComputedStyle(document.body).color;
         const match = color.match(/\d+/g);
         let isDarkTheme = true;
@@ -210,8 +222,9 @@
         modal.setAttribute('data-theme', themeAttr);
     }
 
-    // 1초마다 버튼 유지 및 테마 확인
+    // 1초마다 버튼 유지 및 테마 확인 (본문 감지 안전장치 추가)
     function ensureUIExists() {
+        if (!document.body) return; // 아직 바디가 준비되지 않았으면 무시
         if (!document.body.contains(floatingBtn)) {
             document.body.appendChild(floatingBtn);
         }
@@ -271,7 +284,9 @@
         if (!isDragging) return;
         isDragging = false;
         if (hasMoved) {
-            localStorage.setItem('aistudio_btn_pos', JSON.stringify({ left: floatingBtn.style.left, top: floatingBtn.style.top }));
+            try {
+                localStorage.setItem('aistudio_btn_pos', JSON.stringify({ left: floatingBtn.style.left, top: floatingBtn.style.top }));
+            } catch (e) {}
         } else {
             openModal();
         }
