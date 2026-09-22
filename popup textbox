@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Google AI Studio 모바일 팝업 입력창 (v7.3.4)
 // @namespace    https://aistudio.google.com/
-// @version      7.4.0
-// @description  복사, 잘라내기, 암전영역 터치시 팝업창 숨기기 기능 삭 
+// @version      7.4.1
+// @description  복사, 잘라내기, 암전영역 터치시 팝업창 숨기기 기능 삭
 // @author       User
 // @match        https://aistudio.google.com/*
 // @grant        none
@@ -31,6 +31,9 @@
             --custom-submit-bg: #999999;
             --custom-submit-text: #ffffff;
             --custom-shadow: rgba(0, 0, 0, 0.6);
+            --custom-mid-gray: #888888;
+            --custom-icon-idle: #5e5e5e;
+            --custom-icon-active: #888888;
         }
 
         /* 라이트 모드 변수 덮어쓰기 */
@@ -47,6 +50,9 @@
             --custom-submit-bg: #eeeeee;
             --custom-submit-text: #111111;
             --custom-shadow: rgba(0, 0, 0, 0.2);
+            --custom-mid-gray: #767676;
+            --custom-icon-idle: #a5a5a5;
+            --custom-icon-active: #767676;
         }
 
         /* 화면에 떠다니는 플로팅 버튼 */
@@ -61,7 +67,7 @@
             border: 1px solid var(--custom-btn-border);
             background: var(--custom-bg); 
             backdrop-filter: blur(4px);
-            color: var(--custom-text);
+            color: var(--custom-mid-gray);
             cursor: grab;
             z-index: 999998 !important;
             box-shadow: 0 4px 12px var(--custom-shadow);
@@ -103,23 +109,27 @@
             gap: 8px;
         }
 
-        /* 개별 버튼 기본 스타일 */
+        /* 개별 버튼 기본 스타일 (80% 축소: 24px) */
         .custom-modal-btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            border-radius: 6px;
+            border-radius: 5px;
             cursor: pointer;
-            width: 30px;
-            height: 30px;
+            width: 24px;
+            height: 24px;
             padding: 0;
             border: none;
             background: transparent !important;
-            color: var(--custom-border);
-            transition: color 0.2s;
+            color: var(--custom-icon-idle);
+            transition: color 0.15s, transform 0.1s;
         }
         .custom-modal-btn:hover {
-            color: var(--custom-text);
+            color: var(--custom-icon-active);
+        }
+        .custom-modal-btn:active {
+            color: var(--custom-icon-active);
+            transform: scale(0.92);
         }
 
         /* 텍스트 입력창 */
@@ -189,8 +199,8 @@
     // SVG 아이콘 안전 생성 헬퍼 함수
     function createIconSvg(elements) {
         const s = document.createElementNS(svgns, "svg");
-        s.setAttribute("width", "24");
-        s.setAttribute("height", "24");
+        s.setAttribute("width", "19");
+        s.setAttribute("height", "19");
         s.setAttribute("viewBox", "0 0 24 24");
         s.setAttribute("fill", "none");
         s.setAttribute("stroke", "currentColor");
