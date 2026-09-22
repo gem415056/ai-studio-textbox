@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Google AI Studio 모바일 팝업 입력창 (v7.3.4)
+// @name         Google AI Studio 모바일 팝업 입력창
 // @namespace    https://aistudio.google.com/
-// @version      7.4.3
+// @version      7.4.4
 // @description  복사, 잘라내기, 암전영역 터치시 팝업창 숨기기 기능 삭
 // @author       User
 // @match        https://aistudio.google.com/*
@@ -388,13 +388,24 @@
         }
     }
 
-    floatingBtn.addEventListener('mousedown', startDrag);
-    document.addEventListener('mousemove', moveDrag, { passive: false });
-    document.addEventListener('mouseup', endDrag);
+    // 배경 대화창의 터치 스크롤 방해를 방지하기 위해 플로팅 버튼 조작 중에만 이동 리스너 연결
+    function attachDragListeners() {
+        document.addEventListener('mousemove', moveDrag, { passive: false });
+        document.addEventListener('mouseup', detachDragListeners);
+        document.addEventListener('touchmove', moveDrag, { passive: false });
+        document.addEventListener('touchend', detachDragListeners);
+    }
 
-    floatingBtn.addEventListener('touchstart', startDrag, { passive: true });
-    document.addEventListener('touchmove', moveDrag, { passive: false });
-    document.addEventListener('touchend', endDrag);
+    function detachDragListeners() {
+        document.removeEventListener('mousemove', moveDrag);
+        document.removeEventListener('mouseup', detachDragListeners);
+        document.removeEventListener('touchmove', moveDrag);
+        document.removeEventListener('touchend', detachDragListeners);
+        endDrag();
+    }
+
+    floatingBtn.addEventListener('mousedown', (e) => { startDrag(e); attachDragListeners(); });
+    floatingBtn.addEventListener('touchstart', (e) => { startDrag(e); attachDragListeners(); }, { passive: true });
 
     // ==========================================
     // 5. 팝업창 크기/위치 및 버튼 동작 로직
@@ -503,6 +514,5 @@
     } else {
         window.addEventListener('resize', positionModal);
     }
-    window.addEventListener('scroll', positionModal, true);
 
 })();
