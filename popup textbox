@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Google AI Studio 모바일 팝업 입력창 (v7.3.4)
 // @namespace    https://aistudio.google.com/
-// @version      7.4.2
+// @version      7.4.3
 // @description  복사, 잘라내기, 암전영역 터치시 팝업창 숨기기 기능 삭
 // @author       User
 // @match        https://aistudio.google.com/*
@@ -417,28 +417,21 @@
     };
     textarea.addEventListener('input', adjustHeight);
 
-    // 전체 복사 동작 (텍스트 전환 없이 클립보드 복사 및 포커스 유지)
+    // 전체 복사 동작 (동기적 포커스 유지로 모바일 키보드 고정)
     btnCopy.onclick = () => {
-        if (!textarea.value) {
-            textarea.focus();
-            return;
-        }
-        navigator.clipboard.writeText(textarea.value).then(() => {
-            textarea.focus();
-        });
+        textarea.focus();
+        if (!textarea.value) return;
+        navigator.clipboard.writeText(textarea.value);
     };
 
-    // 전체 잘라내기 동작 (복사 후 내용 지우기 및 포커스 유지)
+    // 전체 잘라내기 동작 (동기적 포커스 유지로 모바일 키보드 고정)
     btnCut.onclick = () => {
-        if (!textarea.value) {
-            textarea.focus();
-            return;
-        }
-        navigator.clipboard.writeText(textarea.value).then(() => {
-            textarea.value = '';
-            adjustHeight();
-            textarea.focus();
-        });
+        textarea.focus();
+        if (!textarea.value) return;
+        const textToCopy = textarea.value;
+        textarea.value = '';
+        adjustHeight();
+        navigator.clipboard.writeText(textToCopy);
     };
 
     // 전체 지우기 동작
@@ -457,6 +450,12 @@
     btnSubmit.onclick = () => {
         submitAndClose();
     };
+
+    // 버튼 탭 시 입력창 포커스 해제(blur)를 방지하여 모바일 키보드 고정
+    [btnCopy, btnCut, btnClear].forEach(btn => {
+        btn.addEventListener('pointerdown', (e) => e.preventDefault());
+        btn.addEventListener('mousedown', (e) => e.preventDefault());
+    });
 
     // 데이터를 본문 입력창에 대입하고 모달 닫기
     function submitAndClose() {
