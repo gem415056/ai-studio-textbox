@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Google AI Studio 모바일 팝업 입력창 (v7.3.4)
 // @namespace    https://aistudio.google.com/
-// @version      7.4.1
+// @version      7.4.2
 // @description  복사, 잘라내기, 암전영역 터치시 팝업창 숨기기 기능 삭
 // @author       User
 // @match        https://aistudio.google.com/*
@@ -88,7 +88,7 @@
             padding: 12px;
             box-sizing: border-box;
             flex-direction: column;
-            gap: 8px;
+            gap: 0;
             box-shadow: 0 4px 25px var(--custom-shadow);
             border: 1px solid var(--custom-border);
             font-family: 'Pretendard', -apple-system, sans-serif;
@@ -96,17 +96,19 @@
             transition: background 0.3s;
         }
 
-        /* 상단 버튼 영역 (좌우 분할 배치) */
+        /* 상단 버튼 영역 (좌우 분할 배치 및 하단 실선) */
         .custom-modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--custom-border);
         }
         .custom-modal-header-left,
         .custom-modal-header-right {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
         }
 
         /* 개별 버튼 기본 스타일 (80% 축소: 24px) */
@@ -415,35 +417,27 @@
     };
     textarea.addEventListener('input', adjustHeight);
 
-    // 전체 복사 동작
+    // 전체 복사 동작 (텍스트 전환 없이 클립보드 복사 및 포커스 유지)
     btnCopy.onclick = () => {
-        if (!textarea.value) return;
+        if (!textarea.value) {
+            textarea.focus();
+            return;
+        }
         navigator.clipboard.writeText(textarea.value).then(() => {
-            if (btnCopy.contains(copySvg)) {
-                btnCopy.removeChild(copySvg);
-            }
-            const copyText = document.createElement('span');
-            copyText.style.fontSize = '11px';
-            copyText.style.fontWeight = 'bold';
-            copyText.style.color = 'var(--custom-border)';
-            copyText.textContent = '복사됨';
-            btnCopy.appendChild(copyText);
-
-            setTimeout(() => {
-                if (btnCopy.contains(copyText)) {
-                    btnCopy.removeChild(copyText);
-                }
-                btnCopy.appendChild(copySvg);
-            }, 1500);
+            textarea.focus();
         });
     };
 
-    // 전체 잘라내기 동작 (복사 후 내용 지우기)
+    // 전체 잘라내기 동작 (복사 후 내용 지우기 및 포커스 유지)
     btnCut.onclick = () => {
-        if (!textarea.value) return;
+        if (!textarea.value) {
+            textarea.focus();
+            return;
+        }
         navigator.clipboard.writeText(textarea.value).then(() => {
             textarea.value = '';
             adjustHeight();
+            textarea.focus();
         });
     };
 
