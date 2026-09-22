@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Google AI Studio 모바일 팝업 입력창 (v7.3.4)
 // @namespace    https://aistudio.google.com/
-// @version      7.3.4
-// @description  라이트/다크 자동감지, 구글 보안 우회, 플로팅 버튼, 프롬프트 문구 적용
+// @version      7.4.0
+// @description  복사, 잘라내기, 암전영역 터치시 팝업창 숨기기 기능 삭 
 // @author       User
 // @match        https://aistudio.google.com/*
 // @grant        none
@@ -90,34 +90,36 @@
             transition: background 0.3s;
         }
 
-        /* 상단 버튼 영역 (좌측 배치 변경) */
+        /* 상단 버튼 영역 (좌우 분할 배치) */
         .custom-modal-header {
             display: flex;
-            justify-content: flex-start;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .custom-modal-header-left,
+        .custom-modal-header-right {
+            display: flex;
+            align-items: center;
             gap: 8px;
         }
 
-        /* 개별 버튼 기본 스타일 (테두리 제거) */
+        /* 개별 버튼 기본 스타일 */
         .custom-modal-btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             border-radius: 6px;
-            font-size: 13px;
-            font-weight: 600;
             cursor: pointer;
+            width: 30px;
             height: 30px;
             padding: 0;
             border: none;
             background: transparent !important;
-            transition: all 0.2s;
+            color: var(--custom-border);
+            transition: color 0.2s;
         }
-
-        /* 전체복사 버튼 (테두리 색상 맞춤) */
-        .btn-copy { 
-            background: transparent; 
-            color: var(--custom-border); 
-            width: 30px; 
+        .custom-modal-btn:hover {
+            color: var(--custom-text);
         }
 
         /* 텍스트 입력창 */
@@ -150,13 +152,31 @@
 
     const svgns = "http://www.w3.org/2000/svg";
     const svg = document.createElementNS(svgns, "svg");
-    svg.setAttribute("fill", "currentColor");
-    svg.setAttribute("viewBox", "0 0 20 20");
-    svg.setAttribute("width", "24px");
-    svg.setAttribute("height", "24px");
-    const path = document.createElementNS(svgns, "path");
-    path.setAttribute("d", "m13.8 2.58 1.1 3.4 3.4 1.09c.23.07.23.38 0 .46l-3.4 1.09-1.1 3.4a.24.24 0 0 1-.45 0l-1.1-3.4-3.4-1.1a.24.24 0 0 1 0-.45l3.4-1.1 1.1-3.4a.24.24 0 0 1 .46 0M7.5 5.25h-5V3.92h5zm0 5.42h-5V9.33h5zm-5 5.41h15v-1.33h-15z");
-    svg.appendChild(path);
+    svg.setAttribute("width", "24");
+    svg.setAttribute("height", "24");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "2");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+
+    const fRect = document.createElementNS(svgns, "rect");
+    fRect.setAttribute("width", "18");
+    fRect.setAttribute("height", "18");
+    fRect.setAttribute("x", "3");
+    fRect.setAttribute("y", "3");
+    fRect.setAttribute("rx", "2");
+
+    const fPath1 = document.createElementNS(svgns, "path");
+    fPath1.setAttribute("d", "M3 9h18");
+
+    const fPath2 = document.createElementNS(svgns, "path");
+    fPath2.setAttribute("d", "m9 16 3-3 3 3");
+
+    svg.appendChild(fRect);
+    svg.appendChild(fPath1);
+    svg.appendChild(fPath2);
     floatingBtn.appendChild(svg);
 
     // 팝업창 생성
@@ -166,37 +186,91 @@
     const header = document.createElement('div');
     header.className = 'custom-modal-header';
 
-    // 복사 버튼 생성 및 전달받은 SVG 객체 조립 (구글 보안 우회를 위해 안전한 DOM 방식으로 생성)
+    // SVG 아이콘 안전 생성 헬퍼 함수
+    function createIconSvg(elements) {
+        const s = document.createElementNS(svgns, "svg");
+        s.setAttribute("width", "24");
+        s.setAttribute("height", "24");
+        s.setAttribute("viewBox", "0 0 24 24");
+        s.setAttribute("fill", "none");
+        s.setAttribute("stroke", "currentColor");
+        s.setAttribute("stroke-width", "2");
+        s.setAttribute("stroke-linecap", "round");
+        s.setAttribute("stroke-linejoin", "round");
+        elements.forEach(cfg => {
+            const el = document.createElementNS(svgns, cfg.tag);
+            for (const [k, v] of Object.entries(cfg.attrs)) {
+                el.setAttribute(k, v);
+            }
+            s.appendChild(el);
+        });
+        return s;
+    }
+
+    // 좌측 버튼 그룹 (복사, 잘라내기, 전체 지우기)
+    const headerLeft = document.createElement('div');
+    headerLeft.className = 'custom-modal-header-left';
+
     const btnCopy = document.createElement('button');
-    btnCopy.className = 'custom-modal-btn btn-copy';
-
-    const copySvg = document.createElementNS(svgns, "svg");
-    copySvg.setAttribute("width", "24");
-    copySvg.setAttribute("height", "24");
-    copySvg.setAttribute("viewBox", "0 0 24 24");
-    copySvg.setAttribute("fill", "none");
-    copySvg.setAttribute("stroke", "currentColor");
-    copySvg.setAttribute("stroke-width", "2");
-    copySvg.setAttribute("stroke-linecap", "round");
-    copySvg.setAttribute("stroke-linejoin", "round");
-    copySvg.setAttribute("class", "lucide lucide-copy-icon lucide-copy");
-
-    const rect = document.createElementNS(svgns, "rect");
-    rect.setAttribute("width", "14");
-    rect.setAttribute("height", "14");
-    rect.setAttribute("x", "8");
-    rect.setAttribute("y", "8");
-    rect.setAttribute("rx", "2");
-    rect.setAttribute("ry", "2");
-
-    const pathEl = document.createElementNS(svgns, "path");
-    pathEl.setAttribute("d", "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2");
-
-    copySvg.appendChild(rect);
-    copySvg.appendChild(pathEl);
+    btnCopy.className = 'custom-modal-btn';
+    const copySvg = createIconSvg([
+        { tag: 'rect', attrs: { width: '14', height: '14', x: '8', y: '8', rx: '2', ry: '2' } },
+        { tag: 'path', attrs: { d: 'M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2' } }
+    ]);
     btnCopy.appendChild(copySvg);
 
-    header.appendChild(btnCopy);
+    const btnCut = document.createElement('button');
+    btnCut.className = 'custom-modal-btn';
+    const cutSvg = createIconSvg([
+        { tag: 'circle', attrs: { cx: '6', cy: '6', r: '3' } },
+        { tag: 'path', attrs: { d: 'M8.12 8.12 12 12' } },
+        { tag: 'path', attrs: { d: 'M20 4 8.12 15.88' } },
+        { tag: 'circle', attrs: { cx: '6', cy: '18', r: '3' } },
+        { tag: 'path', attrs: { d: 'M14.8 14.8 20 20' } }
+    ]);
+    btnCut.appendChild(cutSvg);
+
+    const btnClear = document.createElement('button');
+    btnClear.className = 'custom-modal-btn';
+    const clearSvg = createIconSvg([
+        { tag: 'path', attrs: { d: 'm16 22-1-4' } },
+        { tag: 'path', attrs: { d: 'M19 14a1 1 0 0 0 1-1v-1a2 2 0 0 0-2-2h-3a1 1 0 0 1-1-1V4a2 2 0 0 0-4 0v5a1 1 0 0 1-1 1H6a2 2 0 0 0-2 2v1a1 1 0 0 0 1 1' } },
+        { tag: 'path', attrs: { d: 'M19 14H5l-1.973 6.767A1 1 0 0 0 4 22h16a1 1 0 0 0 .973-1.233z' } },
+        { tag: 'path', attrs: { d: 'm8 22 1-4' } }
+    ]);
+    btnClear.appendChild(clearSvg);
+
+    headerLeft.appendChild(btnCopy);
+    headerLeft.appendChild(btnCut);
+    headerLeft.appendChild(btnClear);
+
+    // 우측 버튼 그룹 (숨기기, 내보내기)
+    const headerRight = document.createElement('div');
+    headerRight.className = 'custom-modal-header-right';
+
+    const btnHide = document.createElement('button');
+    btnHide.className = 'custom-modal-btn';
+    const hideSvg = createIconSvg([
+        { tag: 'rect', attrs: { width: '18', height: '18', x: '3', y: '3', rx: '2' } },
+        { tag: 'path', attrs: { d: 'M3 15h18' } },
+        { tag: 'path', attrs: { d: 'm15 8-3 3-3-3' } }
+    ]);
+    btnHide.appendChild(hideSvg);
+
+    const btnSubmit = document.createElement('button');
+    btnSubmit.className = 'custom-modal-btn';
+    const submitSvg = createIconSvg([
+        { tag: 'path', attrs: { d: 'M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6' } },
+        { tag: 'path', attrs: { d: 'm21 3-9 9' } },
+        { tag: 'path', attrs: { d: 'M15 3h6v6' } }
+    ]);
+    btnSubmit.appendChild(submitSvg);
+
+    headerRight.appendChild(btnHide);
+    headerRight.appendChild(btnSubmit);
+
+    header.appendChild(headerLeft);
+    header.appendChild(headerRight);
 
     // 텍스트 영역 생성
     const textarea = document.createElement('textarea');
@@ -331,7 +405,7 @@
     };
     textarea.addEventListener('input', adjustHeight);
 
-    // 전체 복사 동작 (보안 검회를 통과하기 위해 innerHTML 미사용 우회 구현)
+    // 전체 복사 동작
     btnCopy.onclick = () => {
         if (!textarea.value) return;
         navigator.clipboard.writeText(textarea.value).then(() => {
@@ -352,6 +426,32 @@
                 btnCopy.appendChild(copySvg);
             }, 1500);
         });
+    };
+
+    // 전체 잘라내기 동작 (복사 후 내용 지우기)
+    btnCut.onclick = () => {
+        if (!textarea.value) return;
+        navigator.clipboard.writeText(textarea.value).then(() => {
+            textarea.value = '';
+            adjustHeight();
+        });
+    };
+
+    // 전체 지우기 동작
+    btnClear.onclick = () => {
+        textarea.value = '';
+        adjustHeight();
+        textarea.focus();
+    };
+
+    // 숨기기 동작 (단순 모달 닫기)
+    btnHide.onclick = () => {
+        modal.style.display = 'none';
+    };
+
+    // 내보내기 동작 (본문 대입 및 모달 닫기)
+    btnSubmit.onclick = () => {
+        submitAndClose();
     };
 
     // 데이터를 본문 입력창에 대입하고 모달 닫기
@@ -401,16 +501,5 @@
         window.addEventListener('resize', positionModal);
     }
     window.addEventListener('scroll', positionModal, true);
-
-    // 모바일 터치 및 마우스 동작을 모두 포괄하는 바깥 영역 감지 ( submitAndClose 자동 트리거 )
-    function handleOutsideTouch(e) {
-        if (modal.style.display === 'flex') {
-            if (e.target !== textarea && !btnCopy.contains(e.target)) {
-                submitAndClose();
-            }
-        }
-    }
-    document.addEventListener('touchstart', handleOutsideTouch, { passive: true });
-    document.addEventListener('mousedown', handleOutsideTouch);
 
 })();
