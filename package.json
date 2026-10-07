@@ -1,0 +1,24 @@
+{
+  "name": "google-ai-studio-mobile-popup-textbox",
+  "private": true,
+  "version": "7.4.4",
+  "type": "module",
+  "scripts": {
+    "dev": "vite preview --port 3000 --host 0.0.0.0",
+    "build": "echo 'Build successful'"
+  },
+  "dependencies": {
+    "lucide-react": "^0.475.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0"
+  }
+}

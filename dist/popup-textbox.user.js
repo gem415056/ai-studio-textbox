@@ -2,7 +2,7 @@
 // @name         Google AI Studio 모바일 팝업 입력창
 // @namespace    https://aistudio.google.com/
 // @version      7.4.4
-// @description  복사, 잘라내기, 암전영역 터치시 팝업창 숨기기 기능 삭
+// @description  복사, 잘라내기, 암전영역 터치시 팝업창 숨기기 기능 탑재 모바일 프롬프트 팝업
 // @author       User
 // @match        https://aistudio.google.com/*
 // @grant        none
@@ -293,7 +293,7 @@
     modal.appendChild(textarea);
 
     // ==========================================
-    // 3. 유지 관리 및 테마 감지 (오리지널과 동일 구조 유지)
+    // 3. 유지 관리 및 테마 감지
     // ==========================================
     const savedPos = localStorage.getItem('aistudio_btn_pos');
     if (savedPos) {
@@ -305,7 +305,6 @@
         floatingBtn.style.bottom = '100px';
     }
 
-    // 라이트 모드 판단 함수
     function detectTheme() {
         const color = window.getComputedStyle(document.body).color;
         const match = color.match(/\d+/g);
@@ -321,7 +320,6 @@
         modal.setAttribute('data-theme', themeAttr);
     }
 
-    // 1초마다 버튼 유지 및 테마 확인
     function ensureUIExists() {
         if (!document.body.contains(floatingBtn)) {
             document.body.appendChild(floatingBtn);
@@ -335,7 +333,7 @@
     ensureUIExists();
 
     // ==========================================
-    // 4. 드래그 로직 (오리지널과 동일 구조 유지)
+    // 4. 드래그 로직
     // ==========================================
     let isDragging = false;
     let hasMoved = false;
@@ -388,7 +386,6 @@
         }
     }
 
-    // 배경 대화창의 터치 스크롤 방해를 방지하기 위해 플로팅 버튼 조작 중에만 이동 리스너 연결
     function attachDragListeners() {
         document.addEventListener('mousemove', moveDrag, { passive: false });
         document.addEventListener('mouseup', detachDragListeners);
@@ -428,14 +425,12 @@
     };
     textarea.addEventListener('input', adjustHeight);
 
-    // 전체 복사 동작 (동기적 포커스 유지로 모바일 키보드 고정)
     btnCopy.onclick = () => {
         textarea.focus();
         if (!textarea.value) return;
         navigator.clipboard.writeText(textarea.value);
     };
 
-    // 전체 잘라내기 동작 (동기적 포커스 유지로 모바일 키보드 고정)
     btnCut.onclick = () => {
         textarea.focus();
         if (!textarea.value) return;
@@ -445,24 +440,20 @@
         navigator.clipboard.writeText(textToCopy);
     };
 
-    // 전체 지우기 동작
     btnClear.onclick = () => {
         textarea.value = '';
         adjustHeight();
         textarea.focus();
     };
 
-    // 숨기기 동작 (단순 모달 닫기)
     btnHide.onclick = () => {
         modal.style.display = 'none';
     };
 
-    // 내보내기 동작 (본문 대입 및 모달 닫기)
     btnSubmit.onclick = () => {
         submitAndClose();
     };
 
-    // 버튼 탭 시 입력창 포커스 해제(blur)를 방지하여 모바일 키보드 고정
     [btnCopy, btnCut, btnClear].forEach(btn => {
         btn.addEventListener('pointerdown', (e) => e.preventDefault());
         btn.addEventListener('mousedown', (e) => e.preventDefault());
@@ -481,7 +472,6 @@
         );
     }
 
-    // 데이터를 본문 입력창에 대입하고 모달 닫기
     function submitAndClose() {
         const originalInput = getTargetInput();
         if (originalInput) {
@@ -502,7 +492,6 @@
         modal.style.display = 'none';
     }
 
-    // 팝업이 대상 입력창 컨테이너 레이아웃과 정확히 맞물려 뜨도록 조정
     function positionModal() {
         const container = getTargetContainer();
         if (!container || modal.style.display === 'none') return;

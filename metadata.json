@@ -1,0 +1,6 @@
+{
+  "name": "Google AI Studio Mobile Popup Textbox",
+  "description": "Mobile floating popup prompt editor and userscript tool for Google AI Studio with quick action shortcuts, cut/copy/clear tools, and seamless prompt synchronization.",
+  "requestFramePermissions": [],
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
