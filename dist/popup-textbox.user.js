@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Google AI Studio 모바일 팝업 입력창
 // @namespace    https://aistudio.google.com/
-// @version      7.4.4
+// @version      7.5.0
 // @description  복사, 잘라내기, 암전영역 터치시 팝업창 숨기기 기능 탑재 모바일 프롬프트 팝업
 // @author       User
 // @match        https://aistudio.google.com/*
