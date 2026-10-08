@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import rawUserscript from '../popup textbox?raw';
 import { 
   Smartphone, 
   Monitor, 
@@ -39,156 +40,7 @@ export default function App() {
   const hasMovedRef = useRef(false);
   const dragStartPosRef = useRef({ x: 0, y: 0, initialLeft: 0, initialTop: 0 });
 
-  const USERSCRIPT_CODE = `// ==UserScript==
-// @name         Google AI Studio 모바일 팝업 입력창
-// @namespace    https://aistudio.google.com/
-// @version      7.4.4
-// @description  복사, 잘라내기, 암전영역 터치시 팝업창 숨기기 기능 탑재 모바일 프롬프트 팝업
-// @author       User
-// @match        https://aistudio.google.com/*
-// @grant        none
-// @run-at       document-idle
-// ==/UserScript==
-
-(function () {
-    'use strict';
-
-    // 1. CSS 스타일 및 테마 변수 정의
-    const style = document.createElement('style');
-    style.textContent = \`
-        :root {
-            --custom-bg: rgba(40, 40, 40, 0.95);
-            --custom-modal-bg: #242424;
-            --custom-text: #ffffff;
-            --custom-text-muted: #888888;
-            --custom-border: rgba(255, 255, 255, 0.15);
-            --custom-btn-border: rgba(255, 255, 255, 0.2);
-            --custom-copy-text: #cccccc;
-            --custom-cancel-text: #ff8a8a;
-            --custom-cancel-border: rgba(255, 138, 138, 0.3);
-            --custom-submit-bg: #999999;
-            --custom-submit-text: #ffffff;
-            --custom-shadow: rgba(0, 0, 0, 0.6);
-            --custom-mid-gray: #888888;
-            --custom-icon-idle: #5e5e5e;
-            --custom-icon-active: #888888;
-        }
-
-        [data-theme="light"] {
-            --custom-bg: rgba(255, 255, 255, 0.95);
-            --custom-modal-bg: #ffffff;
-            --custom-text: #111111;
-            --custom-text-muted: #888888;
-            --custom-border: rgba(0, 0, 0, 0.15);
-            --custom-btn-border: rgba(0, 0, 0, 0.2);
-            --custom-copy-text: #555555;
-            --custom-cancel-text: #e53935;
-            --custom-cancel-border: rgba(229, 57, 53, 0.3);
-            --custom-submit-bg: #eeeeee;
-            --custom-submit-text: #111111;
-            --custom-shadow: rgba(0, 0, 0, 0.2);
-            --custom-mid-gray: #767676;
-            --custom-icon-idle: #a5a5a5;
-            --custom-icon-active: #767676;
-        }
-
-        #custom-floating-btn {
-            position: fixed;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 40px; 
-            height: 40px;
-            border-radius: 8px; 
-            border: 1px solid var(--custom-btn-border);
-            background: var(--custom-bg); 
-            backdrop-filter: blur(4px);
-            color: var(--custom-mid-gray);
-            cursor: grab;
-            z-index: 999998 !important;
-            box-shadow: 0 4px 12px var(--custom-shadow);
-            touch-action: none;
-            transition: transform 0.1s, background 0.3s, color 0.3s;
-        }
-        #custom-floating-btn:active {
-            cursor: grabbing;
-            transform: scale(0.95);
-        }
-
-        #custom-aistudio-modal {
-            display: none;
-            position: fixed;
-            background: var(--custom-modal-bg); 
-            border-radius: 12px;
-            padding: 12px;
-            box-sizing: border-box;
-            flex-direction: column;
-            gap: 0;
-            box-shadow: 0 4px 25px var(--custom-shadow);
-            border: 1px solid var(--custom-border);
-            font-family: 'Pretendard', -apple-system, sans-serif;
-            z-index: 999999 !important;
-            transition: background 0.3s;
-        }
-
-        .custom-modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-bottom: 8px;
-            border-bottom: 1px solid var(--custom-border);
-        }
-        .custom-modal-header-left,
-        .custom-modal-header-right {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .custom-modal-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 5px;
-            cursor: pointer;
-            width: 24px;
-            height: 24px;
-            padding: 0;
-            border: none;
-            background: transparent !important;
-            color: var(--custom-icon-idle);
-            transition: color 0.15s, transform 0.1s;
-        }
-        .custom-modal-btn:hover {
-            color: var(--custom-icon-active);
-        }
-        .custom-modal-btn:active {
-            color: var(--custom-icon-active);
-            transform: scale(0.92);
-        }
-
-        #custom-modal-textarea {
-            width: 100%;
-            background: transparent;
-            border: none;
-            color: var(--custom-text);
-            font-size: 16px;
-            line-height: 1.5;
-            padding: 8px 4px;
-            outline: none;
-            resize: none;
-            box-sizing: border-box;
-            white-space: pre-wrap;
-            word-break: break-all;
-            transition: color 0.3s;
-        }
-        #custom-modal-textarea::placeholder { color: var(--custom-text-muted); }
-    \`;
-    document.head.appendChild(style);
-
-    // 2. DOM 객체 직접 생성 (플로팅 버튼 & 팝업 모달)
-    // ...
-})();`;
+  const USERSCRIPT_CODE = rawUserscript;
 
   // Auto-resize popup textarea on input
   useEffect(() => {
@@ -331,7 +183,7 @@ export default function App() {
       if (!isDraggingRef.current) return;
       isDraggingRef.current = false;
       if (!hasMovedRef.current) {
-        handleOpenPopup();
+        setIsPopupOpen(prev => !prev);
       }
     };
 
@@ -724,7 +576,7 @@ export default function App() {
                       bottom: btnPos ? 'auto' : '88px',
                       zIndex: 99998,
                     }}
-                    title="Drag to move, click to open popup"
+                    title={isPopupOpen ? "팝업 닫기 (클릭)" : "팝업 열기 (클릭 / 드래그 이동)"}
                   >
                     <svg
                       width="22"
@@ -737,8 +589,17 @@ export default function App() {
                       strokeLinejoin="round"
                     >
                       <rect width="18" height="18" x="3" y="3" rx="2" />
-                      <path d="M3 9h18" />
-                      <path d="m9 16 3-3 3 3" />
+                      {isPopupOpen ? (
+                        <>
+                          <path d="M3 15h18" />
+                          <path d="m15 8-3 3-3-3" />
+                        </>
+                      ) : (
+                        <>
+                          <path d="M3 9h18" />
+                          <path d="m9 16 3-3 3 3" />
+                        </>
+                      )}
                     </svg>
                   </div>
 
@@ -812,22 +673,8 @@ export default function App() {
                           </button>
                         </div>
 
-                        {/* Right Action Buttons: Hide, Submit */}
+                        {/* Right Action Buttons: Submit only */}
                         <div className="custom-modal-header-right">
-                          {/* Hide Button */}
-                          <button
-                            type="button"
-                            className="custom-modal-btn"
-                            onClick={() => setIsPopupOpen(false)}
-                            title="팝업 숨기기 (Hide modal)"
-                          >
-                            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <rect width="18" height="18" x="3" y="3" rx="2" />
-                              <path d="M3 15h18" />
-                              <path d="m15 8-3 3-3-3" />
-                            </svg>
-                          </button>
-
                           {/* Submit / Export Button */}
                           <button
                             type="button"

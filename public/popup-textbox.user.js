@@ -2,7 +2,7 @@
 // @name         Google AI Studio 모바일 팝업 입력창
 // @namespace    https://aistudio.google.com/
 // @version      7.4.4
-// @description  복사, 잘라내기, 암전영역 터치시 팝업창 숨기기 기능 탑재 모바일 프롬프트 팝업
+// @description  복사, 잘라내기, 암전영역 터치시 팝업창 숨기기 기능 삭
 // @author       User
 // @match        https://aistudio.google.com/*
 // @grant        none
@@ -158,51 +158,13 @@
     // 2. DOM 객체 직접 생성 (구글 보안 우회)
     // ==========================================
     
-    // 플로팅 버튼 생성
-    const floatingBtn = document.createElement('div');
-    floatingBtn.id = 'custom-floating-btn';
-
     const svgns = "http://www.w3.org/2000/svg";
-    const svg = document.createElementNS(svgns, "svg");
-    svg.setAttribute("width", "24");
-    svg.setAttribute("height", "24");
-    svg.setAttribute("viewBox", "0 0 24 24");
-    svg.setAttribute("fill", "none");
-    svg.setAttribute("stroke", "currentColor");
-    svg.setAttribute("stroke-width", "2");
-    svg.setAttribute("stroke-linecap", "round");
-    svg.setAttribute("stroke-linejoin", "round");
-
-    const fRect = document.createElementNS(svgns, "rect");
-    fRect.setAttribute("width", "18");
-    fRect.setAttribute("height", "18");
-    fRect.setAttribute("x", "3");
-    fRect.setAttribute("y", "3");
-    fRect.setAttribute("rx", "2");
-
-    const fPath1 = document.createElementNS(svgns, "path");
-    fPath1.setAttribute("d", "M3 9h18");
-
-    const fPath2 = document.createElementNS(svgns, "path");
-    fPath2.setAttribute("d", "m9 16 3-3 3 3");
-
-    svg.appendChild(fRect);
-    svg.appendChild(fPath1);
-    svg.appendChild(fPath2);
-    floatingBtn.appendChild(svg);
-
-    // 팝업창 생성
-    const modal = document.createElement('div');
-    modal.id = 'custom-aistudio-modal';
-
-    const header = document.createElement('div');
-    header.className = 'custom-modal-header';
 
     // SVG 아이콘 안전 생성 헬퍼 함수
-    function createIconSvg(elements) {
+    function createIconSvg(elements, size = 19) {
         const s = document.createElementNS(svgns, "svg");
-        s.setAttribute("width", "19");
-        s.setAttribute("height", "19");
+        s.setAttribute("width", String(size));
+        s.setAttribute("height", String(size));
         s.setAttribute("viewBox", "0 0 24 24");
         s.setAttribute("fill", "none");
         s.setAttribute("stroke", "currentColor");
@@ -218,6 +180,34 @@
         });
         return s;
     }
+
+    // 플로팅 버튼 생성 및 상태별 아이콘 전환 (열기: 올리기 아이콘 / 닫기: 내리기 아이콘)
+    const floatingBtn = document.createElement('div');
+    floatingBtn.id = 'custom-floating-btn';
+
+    function updateFloatingBtnIcon(isOpen) {
+        while (floatingBtn.firstChild) {
+            floatingBtn.removeChild(floatingBtn.firstChild);
+        }
+        const elements = isOpen ? [
+            { tag: 'rect', attrs: { width: '18', height: '18', x: '3', y: '3', rx: '2' } },
+            { tag: 'path', attrs: { d: 'M3 15h18' } },
+            { tag: 'path', attrs: { d: 'm15 8-3 3-3-3' } }
+        ] : [
+            { tag: 'rect', attrs: { width: '18', height: '18', x: '3', y: '3', rx: '2' } },
+            { tag: 'path', attrs: { d: 'M3 9h18' } },
+            { tag: 'path', attrs: { d: 'm9 16 3-3 3 3' } }
+        ];
+        floatingBtn.appendChild(createIconSvg(elements, 24));
+    }
+    updateFloatingBtnIcon(false);
+
+    // 팝업창 생성
+    const modal = document.createElement('div');
+    modal.id = 'custom-aistudio-modal';
+
+    const header = document.createElement('div');
+    header.className = 'custom-modal-header';
 
     // 좌측 버튼 그룹 (복사, 잘라내기, 전체 지우기)
     const headerLeft = document.createElement('div');
@@ -260,15 +250,6 @@
     const headerRight = document.createElement('div');
     headerRight.className = 'custom-modal-header-right';
 
-    const btnHide = document.createElement('button');
-    btnHide.className = 'custom-modal-btn';
-    const hideSvg = createIconSvg([
-        { tag: 'rect', attrs: { width: '18', height: '18', x: '3', y: '3', rx: '2' } },
-        { tag: 'path', attrs: { d: 'M3 15h18' } },
-        { tag: 'path', attrs: { d: 'm15 8-3 3-3-3' } }
-    ]);
-    btnHide.appendChild(hideSvg);
-
     const btnSubmit = document.createElement('button');
     btnSubmit.className = 'custom-modal-btn';
     const submitSvg = createIconSvg([
@@ -278,7 +259,6 @@
     ]);
     btnSubmit.appendChild(submitSvg);
 
-    headerRight.appendChild(btnHide);
     headerRight.appendChild(btnSubmit);
 
     header.appendChild(headerLeft);
@@ -293,7 +273,7 @@
     modal.appendChild(textarea);
 
     // ==========================================
-    // 3. 유지 관리 및 테마 감지
+    // 3. 유지 관리 및 테마 감지 (오리지널과 동일 구조 유지)
     // ==========================================
     const savedPos = localStorage.getItem('aistudio_btn_pos');
     if (savedPos) {
@@ -305,6 +285,7 @@
         floatingBtn.style.bottom = '100px';
     }
 
+    // 라이트 모드 판단 함수
     function detectTheme() {
         const color = window.getComputedStyle(document.body).color;
         const match = color.match(/\d+/g);
@@ -320,6 +301,7 @@
         modal.setAttribute('data-theme', themeAttr);
     }
 
+    // 1초마다 버튼 유지 및 테마 확인
     function ensureUIExists() {
         if (!document.body.contains(floatingBtn)) {
             document.body.appendChild(floatingBtn);
@@ -333,7 +315,7 @@
     ensureUIExists();
 
     // ==========================================
-    // 4. 드래그 로직
+    // 4. 드래그 로직 (오리지널과 동일 구조 유지)
     // ==========================================
     let isDragging = false;
     let hasMoved = false;
@@ -382,10 +364,15 @@
         if (hasMoved) {
             localStorage.setItem('aistudio_btn_pos', JSON.stringify({ left: floatingBtn.style.left, top: floatingBtn.style.top }));
         } else {
-            openModal();
+            if (modal.style.display === 'flex') {
+                closeModal();
+            } else {
+                openModal();
+            }
         }
     }
 
+    // 배경 대화창의 터치 스크롤 방해를 방지하기 위해 플로팅 버튼 조작 중에만 이동 리스너 연결
     function attachDragListeners() {
         document.addEventListener('mousemove', moveDrag, { passive: false });
         document.addEventListener('mouseup', detachDragListeners);
@@ -425,12 +412,14 @@
     };
     textarea.addEventListener('input', adjustHeight);
 
+    // 전체 복사 동작 (동기적 포커스 유지로 모바일 키보드 고정)
     btnCopy.onclick = () => {
         textarea.focus();
         if (!textarea.value) return;
         navigator.clipboard.writeText(textarea.value);
     };
 
+    // 전체 잘라내기 동작 (동기적 포커스 유지로 모바일 키보드 고정)
     btnCut.onclick = () => {
         textarea.focus();
         if (!textarea.value) return;
@@ -440,39 +429,67 @@
         navigator.clipboard.writeText(textToCopy);
     };
 
+    // 전체 지우기 동작
     btnClear.onclick = () => {
         textarea.value = '';
         adjustHeight();
         textarea.focus();
     };
 
-    btnHide.onclick = () => {
-        modal.style.display = 'none';
-    };
-
+    // 내보내기 동작 (본문 대입 및 모달 닫기)
     btnSubmit.onclick = () => {
         submitAndClose();
     };
 
+    // 버튼 탭 시 입력창 포커스 해제(blur)를 방지하여 모바일 키보드 고정
     [btnCopy, btnCut, btnClear].forEach(btn => {
         btn.addEventListener('pointerdown', (e) => e.preventDefault());
         btn.addEventListener('mousedown', (e) => e.preventDefault());
     });
 
-    function submitAndClose() {
-        const originalInput = document.querySelector('textarea[formcontrolname="promptText"], textarea[aria-label="Enter a prompt"]');
-        if (originalInput) {
-            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set;
-            nativeInputValueSetter.call(originalInput, textarea.value);
-            
-            originalInput.dispatchEvent(new Event('input', { bubbles: true }));
-            originalInput.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-        modal.style.display = 'none';
+    // ==========================================
+    // 4.5. 대상 요소 탐색 헬퍼 (Playground & Apps 호환)
+    // ==========================================
+    function getTargetContainer() {
+        return document.querySelector('.input-container, .prompt-box-container');
     }
 
+    function getTargetInput() {
+        return document.querySelector(
+            '.input-container textarea, textarea.cdk-textarea-autosize, textarea[placeholder*="Make changes"], textarea[formcontrolname="promptText"], textarea[aria-label="Enter a prompt"]'
+        );
+    }
+
+    // 팝업 닫기 및 플로팅 버튼 아이콘 복원
+    function closeModal() {
+        modal.style.display = 'none';
+        updateFloatingBtnIcon(false);
+    }
+
+    // 데이터를 본문 입력창에 대입하고 모달 닫기
+    function submitAndClose() {
+        const originalInput = getTargetInput();
+        if (originalInput) {
+            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value")?.set;
+            if (nativeInputValueSetter) {
+                nativeInputValueSetter.call(originalInput, textarea.value);
+            } else {
+                originalInput.value = textarea.value;
+            }
+            
+            // Angular 및 cdktextareaautosize 상태 동기화를 위한 이벤트 디스패치
+            originalInput.dispatchEvent(new Event('input', { bubbles: true }));
+            originalInput.dispatchEvent(new Event('change', { bubbles: true }));
+            originalInput.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
+            originalInput.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+            originalInput.focus();
+        }
+        closeModal();
+    }
+
+    // 팝업이 대상 입력창 컨테이너 레이아웃과 정확히 맞물려 뜨도록 조정
     function positionModal() {
-        const container = document.querySelector('.prompt-box-container');
+        const container = getTargetContainer();
         if (!container || modal.style.display === 'none') return;
 
         const rect = container.getBoundingClientRect();
@@ -484,8 +501,9 @@
 
     function openModal() {
         modal.style.display = 'flex';
-        const originalInput = document.querySelector('textarea[formcontrolname="promptText"], textarea[aria-label="Enter a prompt"]');
-        if(originalInput && originalInput.value) {
+        updateFloatingBtnIcon(true);
+        const originalInput = getTargetInput();
+        if (originalInput && originalInput.value) {
             textarea.value = originalInput.value;
         } else {
             textarea.value = '';
