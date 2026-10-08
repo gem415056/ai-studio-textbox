@@ -320,8 +320,30 @@
     let isDragging = false;
     let hasMoved = false;
     let startX, startY, initialLeft, initialTop;
+    let lastTouchTime = 0;
+    let lastToggleTime = 0;
+
+    function toggleModal() {
+        const now = Date.now();
+        if (now - lastToggleTime < 400) return;
+        lastToggleTime = now;
+
+        if (modal.style.display === 'flex') {
+            closeModal();
+        } else {
+            openModal();
+        }
+    }
 
     function startDrag(e) {
+        if (e.type === 'touchstart') {
+            lastTouchTime = Date.now();
+        } else if (e.type === 'mousedown') {
+            // 모바일 터치 후 브라우저가 생성하는 가상 마우스 이벤트(ghost click) 완전 차단
+            if (Date.now() - lastTouchTime < 600) {
+                return;
+            }
+        }
         isDragging = true;
         hasMoved = false;
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -364,11 +386,7 @@
         if (hasMoved) {
             localStorage.setItem('aistudio_btn_pos', JSON.stringify({ left: floatingBtn.style.left, top: floatingBtn.style.top }));
         } else {
-            if (modal.style.display === 'flex') {
-                closeModal();
-            } else {
-                openModal();
-            }
+            toggleModal();
         }
     }
 
@@ -388,8 +406,15 @@
         endDrag();
     }
 
-    floatingBtn.addEventListener('mousedown', (e) => { startDrag(e); attachDragListeners(); });
-    floatingBtn.addEventListener('touchstart', (e) => { startDrag(e); attachDragListeners(); }, { passive: true });
+    floatingBtn.addEventListener('mousedown', (e) => {
+        if (Date.now() - lastTouchTime < 600) return;
+        startDrag(e);
+        attachDragListeners();
+    });
+    floatingBtn.addEventListener('touchstart', (e) => {
+        startDrag(e);
+        attachDragListeners();
+    }, { passive: true });
 
     // ==========================================
     // 5. 팝업창 크기/위치 및 버튼 동작 로직
