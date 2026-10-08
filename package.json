@@ -4,8 +4,8 @@
   "version": "7.4.4",
   "type": "module",
   "scripts": {
-    "dev": "vite preview --port 3000 --host 0.0.0.0",
-    "build": "echo 'Build successful'"
+    "dev": "vite --port 3000 --host 0.0.0.0",
+    "build": "vite build"
   },
   "dependencies": {
     "lucide-react": "^0.475.0",

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Google AI Studio 모바일 팝업 입력창
 // @namespace    https://aistudio.google.com/
-// @version      7.5.0
+// @version      7.4.4
 // @description  복사, 잘라내기, 암전영역 터치시 팝업창 숨기기 기능 탑재 모바일 프롬프트 팝업
 // @author       User
 // @match        https://aistudio.google.com/*
@@ -158,51 +158,13 @@
     // 2. DOM 객체 직접 생성 (구글 보안 우회)
     // ==========================================
     
-    // 플로팅 버튼 생성
-    const floatingBtn = document.createElement('div');
-    floatingBtn.id = 'custom-floating-btn';
-
     const svgns = "http://www.w3.org/2000/svg";
-    const svg = document.createElementNS(svgns, "svg");
-    svg.setAttribute("width", "24");
-    svg.setAttribute("height", "24");
-    svg.setAttribute("viewBox", "0 0 24 24");
-    svg.setAttribute("fill", "none");
-    svg.setAttribute("stroke", "currentColor");
-    svg.setAttribute("stroke-width", "2");
-    svg.setAttribute("stroke-linecap", "round");
-    svg.setAttribute("stroke-linejoin", "round");
-
-    const fRect = document.createElementNS(svgns, "rect");
-    fRect.setAttribute("width", "18");
-    fRect.setAttribute("height", "18");
-    fRect.setAttribute("x", "3");
-    fRect.setAttribute("y", "3");
-    fRect.setAttribute("rx", "2");
-
-    const fPath1 = document.createElementNS(svgns, "path");
-    fPath1.setAttribute("d", "M3 9h18");
-
-    const fPath2 = document.createElementNS(svgns, "path");
-    fPath2.setAttribute("d", "m9 16 3-3 3 3");
-
-    svg.appendChild(fRect);
-    svg.appendChild(fPath1);
-    svg.appendChild(fPath2);
-    floatingBtn.appendChild(svg);
-
-    // 팝업창 생성
-    const modal = document.createElement('div');
-    modal.id = 'custom-aistudio-modal';
-
-    const header = document.createElement('div');
-    header.className = 'custom-modal-header';
 
     // SVG 아이콘 안전 생성 헬퍼 함수
-    function createIconSvg(elements) {
+    function createIconSvg(elements, size = 19) {
         const s = document.createElementNS(svgns, "svg");
-        s.setAttribute("width", "19");
-        s.setAttribute("height", "19");
+        s.setAttribute("width", String(size));
+        s.setAttribute("height", String(size));
         s.setAttribute("viewBox", "0 0 24 24");
         s.setAttribute("fill", "none");
         s.setAttribute("stroke", "currentColor");
@@ -218,6 +180,32 @@
         });
         return s;
     }
+
+    // 플로팅 버튼 생성 및 상태별 아이콘 전환 (열기: 올리기 아이콘 / 닫기: 내리기 아이콘)
+    const floatingBtn = document.createElement('div');
+    floatingBtn.id = 'custom-floating-btn';
+
+    function updateFloatingBtnIcon(isOpen) {
+        floatingBtn.innerHTML = '';
+        const elements = isOpen ? [
+            { tag: 'rect', attrs: { width: '18', height: '18', x: '3', y: '3', rx: '2' } },
+            { tag: 'path', attrs: { d: 'M3 15h18' } },
+            { tag: 'path', attrs: { d: 'm15 8-3 3-3-3' } }
+        ] : [
+            { tag: 'rect', attrs: { width: '18', height: '18', x: '3', y: '3', rx: '2' } },
+            { tag: 'path', attrs: { d: 'M3 9h18' } },
+            { tag: 'path', attrs: { d: 'm9 16 3-3 3 3' } }
+        ];
+        floatingBtn.appendChild(createIconSvg(elements, 24));
+    }
+    updateFloatingBtnIcon(false);
+
+    // 팝업창 생성
+    const modal = document.createElement('div');
+    modal.id = 'custom-aistudio-modal';
+
+    const header = document.createElement('div');
+    header.className = 'custom-modal-header';
 
     // 좌측 버튼 그룹 (복사, 잘라내기, 전체 지우기)
     const headerLeft = document.createElement('div');
@@ -260,15 +248,6 @@
     const headerRight = document.createElement('div');
     headerRight.className = 'custom-modal-header-right';
 
-    const btnHide = document.createElement('button');
-    btnHide.className = 'custom-modal-btn';
-    const hideSvg = createIconSvg([
-        { tag: 'rect', attrs: { width: '18', height: '18', x: '3', y: '3', rx: '2' } },
-        { tag: 'path', attrs: { d: 'M3 15h18' } },
-        { tag: 'path', attrs: { d: 'm15 8-3 3-3-3' } }
-    ]);
-    btnHide.appendChild(hideSvg);
-
     const btnSubmit = document.createElement('button');
     btnSubmit.className = 'custom-modal-btn';
     const submitSvg = createIconSvg([
@@ -278,7 +257,6 @@
     ]);
     btnSubmit.appendChild(submitSvg);
 
-    headerRight.appendChild(btnHide);
     headerRight.appendChild(btnSubmit);
 
     header.appendChild(headerLeft);
@@ -382,7 +360,11 @@
         if (hasMoved) {
             localStorage.setItem('aistudio_btn_pos', JSON.stringify({ left: floatingBtn.style.left, top: floatingBtn.style.top }));
         } else {
-            openModal();
+            if (modal.style.display === 'flex') {
+                closeModal();
+            } else {
+                openModal();
+            }
         }
     }
 
@@ -446,10 +428,6 @@
         textarea.focus();
     };
 
-    btnHide.onclick = () => {
-        modal.style.display = 'none';
-    };
-
     btnSubmit.onclick = () => {
         submitAndClose();
     };
@@ -472,6 +450,11 @@
         );
     }
 
+    function closeModal() {
+        modal.style.display = 'none';
+        updateFloatingBtnIcon(false);
+    }
+
     function submitAndClose() {
         const originalInput = getTargetInput();
         if (originalInput) {
@@ -489,7 +472,7 @@
             originalInput.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
             originalInput.focus();
         }
-        modal.style.display = 'none';
+        closeModal();
     }
 
     function positionModal() {
@@ -505,6 +488,7 @@
 
     function openModal() {
         modal.style.display = 'flex';
+        updateFloatingBtnIcon(true);
         const originalInput = getTargetInput();
         if (originalInput && originalInput.value) {
             textarea.value = originalInput.value;
